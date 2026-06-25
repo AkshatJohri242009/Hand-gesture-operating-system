@@ -3,24 +3,24 @@
 
 # Static gesture thresholds (landmark distance ratios)
 thresholds:
-  pinch_ratio: 0.08          # dist(thumb_tip, index_tip) / palm_width
+  pinch_ratio: 0.08           # dist(thumb_tip, index_tip) / palm_width
   two_finger_pinch_ratio: 0.08  # dist(thumb_tip, middle_tip) / palm_width
-  finger_curl_extended: 0.8  # curl_ratio > this = extended
-  finger_curl_curled: 0.5    # curl_ratio < this = curled
-  thumb_abduction_angle: 30  # degrees from index finger axis
+  finger_curl_extended: 0.8   # curl_ratio > this = extended
+  finger_curl_curled: 0.5     # curl_ratio < this = curled
+  thumb_abduction_angle: 40   # degrees from index finger axis
   palm_width_normalizer: true # use dist(wrist, middle_mcp) as scale
 
 # Dynamic gesture thresholds (motion-based)
 dynamics:
   swipe:
-    window_frames: 6         # frames in sliding window
-    min_displacement: 0.1    # normalized displacement threshold
-    min_velocity: 0.02       # velocity per frame
+    window_frames: 6          # frames in sliding window
+    min_displacement: 0.15    # normalized displacement (15% of frame)
+    min_velocity: 0.03        # velocity per frame
   rotation:
     window_frames: 5
-    angle_threshold: 30      # degrees cumulative rotation to fire
+    angle_threshold: 40       # degrees cumulative rotation to fire
   double_pinch:
-    max_interval: 0.5        # seconds between two pinches
+    max_interval: 0.5         # seconds between two pinches
 
 # State machine
 state_machine:
