@@ -1,0 +1,42 @@
+# Application Settings
+
+camera:
+  device_id: 0
+  width: 640
+  height: 480
+  fps: 30
+
+gesture:
+  detection_interval: 0.05  # seconds between frames
+  smoothing: 0.5            # cursor smoothing factor (0-1)
+  dead_zone: 0.05           # minimum movement to register
+
+voice:
+  engine: vosk              # vosk | whisper | google
+  model_path: models/vosk/
+  language: en-US
+  timeout: 5                # seconds of silence before processing
+  phrase_limit: 10          # max seconds per phrase
+
+mouse:
+  sensitivity: 1.0
+  acceleration: true
+  natural_scrolling: true
+
+eye_tracking:
+  enabled: false
+  blink_threshold: 0.3      # eye aspect ratio threshold
+  blink_duration: 0.15      # seconds for single blink
+  double_blink_interval: 0.5
+  long_blink_duration: 0.8
+
+head_tracking:
+  enabled: false
+  pitch_threshold: 20       # degrees from center
+  yaw_threshold: 25
+
+logging:
+  level: INFO
+  file: logs/apex_control.log
+  gesture_log: logs/gestures.csv
+  voice_log: logs/voice_commands.csv

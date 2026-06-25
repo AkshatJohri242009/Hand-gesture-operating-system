@@ -1,0 +1,63 @@
+# Gesture Configuration
+# Maps gesture names to their OS actions
+
+gestures:
+  open_palm:
+    action: cursor_mode
+    description: Enable cursor tracking mode
+    confidence: 0.8
+
+  pinch:
+    action: left_click
+    description: Pinch thumb and index finger
+    confidence: 0.85
+
+  two_finger_pinch:
+    action: right_click
+    description: Pinch thumb and middle finger
+    confidence: 0.85
+
+  swipe_left:
+    action: previous_tab
+    description: Swipe hand left
+    confidence: 0.7
+
+  swipe_right:
+    action: next_tab
+    description: Swipe hand right
+    confidence: 0.7
+
+  swipe_up:
+    action: task_view
+    description: Swipe hand up
+    confidence: 0.7
+
+  swipe_down:
+    action: show_desktop
+    description: Swipe hand down
+    confidence: 0.7
+
+  rotate_clockwise:
+    action: volume_up
+    description: Rotate wrist clockwise
+    confidence: 0.75
+
+  rotate_counterclockwise:
+    action: volume_down
+    description: Rotate wrist counterclockwise
+    confidence: 0.75
+
+  closed_fist:
+    action: drag_start
+    description: Closed fist - start drag
+    confidence: 0.8
+
+  double_pinch:
+    action: play_pause
+    description: Double pinch gesture
+    confidence: 0.8
+
+  thumbs_up:
+    action: confirm
+    description: Thumbs up to confirm
+    confidence: 0.85

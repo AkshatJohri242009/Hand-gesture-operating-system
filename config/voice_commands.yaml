@@ -1,0 +1,85 @@
+# Voice Command Configuration
+# Maps spoken commands to system actions
+
+commands:
+  # Application Launchers
+  - trigger: "open spotify"
+    action: launch_app
+    params:
+      app: spotify
+
+  - trigger: "open chrome"
+    action: launch_app
+    params:
+      app: chrome
+
+  - trigger: "open discord"
+    action: launch_app
+    params:
+      app: discord
+
+  - trigger: "open vs code"
+    action: launch_app
+    params:
+      app: code
+
+  # Media Control
+  - trigger: "play music"
+    action: media_play
+    params: {}
+
+  - trigger: "pause music"
+    action: media_pause
+    params: {}
+
+  - trigger: "next song"
+    action: media_next
+    params: {}
+
+  - trigger: "previous song"
+    action: media_previous
+    params: {}
+
+  - trigger: "volume up"
+    action: volume_up
+    params:
+      amount: 10
+
+  - trigger: "volume down"
+    action: volume_down
+    params:
+      amount: 10
+
+  - trigger: "volume (\d+)%"
+    action: volume_set
+    params:
+      level: "$1"  # regex capture group
+
+  # System Control
+  - trigger: "mute"
+    action: volume_mute
+    params: {}
+
+  - trigger: "screenshot"
+    action: take_screenshot
+    params: {}
+
+  - trigger: "lock computer"
+    action: lock_system
+    params: {}
+
+  # Smart Context (V3)
+  - trigger: "study mode"
+    action: smart_context
+    params:
+      mode: study
+
+  - trigger: "work mode"
+    action: smart_context
+    params:
+      mode: work
+
+  - trigger: "focus mode"
+    action: smart_context
+    params:
+      mode: focus
