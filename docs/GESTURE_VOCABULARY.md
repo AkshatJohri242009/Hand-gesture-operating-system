@@ -49,6 +49,27 @@ Gestures change meaning based on the active application:
 ## Implementation Notes
 
 - All gestures require a minimum confidence score (configurable per gesture in `config/gestures.yaml`)
-- Gestures must be held for 3–5 consecutive frames before firing to prevent false positives
-- A cooldown period prevents the same gesture from firing multiple times
+- Gestures must be held for 3 consecutive frames before firing (CANDIDATE → ACTIVE transition)
+- A 200ms cooldown period prevents the same gesture from firing multiple times
 - The system uses exponential smoothing on landmark positions to reduce jitter
+- Two-layer architecture: frame classifier → gesture state machine
+- Dynamic gestures (swipe, rotate) use a sliding window of 6 frames for velocity/angle tracking
+- Cursor only moves when Open Palm is in ACTIVE state
+- Pinch-hold = drag; release = drop (gesture state machine handles this automatically)
+
+### State Machine Details
+
+```
+States:  IDLE → CANDIDATE → ACTIVE → COOLDOWN → IDLE
+
+IDLE       → CANDIDATE:  gesture detected with confidence ≥ threshold (1 frame)
+CANDIDATE  → ACTIVE:     gesture stable for 3 consecutive frames
+ACTIVE     → COOLDOWN:   gesture released (fires RELEASE event)
+COOLDOWN   → IDLE:       wait 200ms before accepting new gestures
+```
+
+### Scroll Interactions
+
+Scroll up / down can replace volume rotation when the active context is a scrollable window (browser, file explorer).
+
+In V1, scroll is assigned to two-finger vertical drag (index and middle tips moving together up/down). This is activated after a pinch-hold on the scrollbar area.

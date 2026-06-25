@@ -5,11 +5,21 @@ camera:
   width: 640
   height: 480
   fps: 30
+  flip_horizontal: true     # mirror for natural interaction
 
 gesture:
   detection_interval: 0.05  # seconds between frames
-  smoothing: 0.5            # cursor smoothing factor (0-1)
-  dead_zone: 0.05           # minimum movement to register
+  smoothing: 0.3            # cursor smoothing factor (0-1), lower = smoother
+  dead_zone: 0.02           # minimum movement to register (normalized)
+  dominant_hand: right      # right | left | auto
+  cursor_mode_palm: true    # use palm center (landmark 9) for cursor pos
+  show_debug_overlay: true  # draw landmarks + labels on frame
+
+mouse:
+  sensitivity: 1.0
+  acceleration: true
+  natural_scrolling: true
+  drag_threshold: 5          # pixels before drag starts after pinch-hold
 
 voice:
   engine: vosk              # vosk | whisper | google
@@ -17,11 +27,6 @@ voice:
   language: en-US
   timeout: 5                # seconds of silence before processing
   phrase_limit: 10          # max seconds per phrase
-
-mouse:
-  sensitivity: 1.0
-  acceleration: true
-  natural_scrolling: true
 
 eye_tracking:
   enabled: false
@@ -35,8 +40,13 @@ head_tracking:
   pitch_threshold: 20       # degrees from center
   yaw_threshold: 25
 
+context:
+  poll_interval: 1.0        # seconds between active window checks
+  use_regex_matching: true  # match app patterns from window title
+
 logging:
   level: INFO
   file: logs/apex_control.log
   gesture_log: logs/gestures.csv
   voice_log: logs/voice_commands.csv
+  debug_window: true        # show OpenCV debug window

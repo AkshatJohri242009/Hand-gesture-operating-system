@@ -1,6 +1,34 @@
 # Gesture Configuration
-# Maps gesture names to their OS actions
+# Thresholds and mappings for all V1 gestures
 
+# Static gesture thresholds (landmark distance ratios)
+thresholds:
+  pinch_ratio: 0.08          # dist(thumb_tip, index_tip) / palm_width
+  two_finger_pinch_ratio: 0.08  # dist(thumb_tip, middle_tip) / palm_width
+  finger_curl_extended: 0.8  # curl_ratio > this = extended
+  finger_curl_curled: 0.5    # curl_ratio < this = curled
+  thumb_abduction_angle: 30  # degrees from index finger axis
+  palm_width_normalizer: true # use dist(wrist, middle_mcp) as scale
+
+# Dynamic gesture thresholds (motion-based)
+dynamics:
+  swipe:
+    window_frames: 6         # frames in sliding window
+    min_displacement: 0.1    # normalized displacement threshold
+    min_velocity: 0.02       # velocity per frame
+  rotation:
+    window_frames: 5
+    angle_threshold: 30      # degrees cumulative rotation to fire
+  double_pinch:
+    max_interval: 0.5        # seconds between two pinches
+
+# State machine
+state_machine:
+  confirm_frames: 3          # consecutive frames to enter ACTIVE
+  cooldown_ms: 200           # cooldown after RELEASE
+  hold_trigger_ms: 500       # HOLD event fires after this duration
+
+# Gesture-to-action mappings
 gestures:
   open_palm:
     action: cursor_mode
@@ -61,3 +89,21 @@ gestures:
     action: confirm
     description: Thumbs up to confirm
     confidence: 0.85
+
+# Context-aware mappings (overrides per active app)
+contexts:
+  chrome:
+    swipe_right: next_tab
+    swipe_left: previous_tab
+    swipe_up: new_tab
+    swipe_down: close_tab
+  spotify:
+    swipe_right: next_song
+    swipe_left: previous_song
+    swipe_up: volume_up
+    swipe_down: volume_down
+  explorer:
+    swipe_right: next_folder
+    swipe_left: previous_folder
+    swipe_up: parent_directory
+    swipe_down: open_selected

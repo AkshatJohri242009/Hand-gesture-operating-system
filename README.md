@@ -4,6 +4,8 @@
 
 > Eliminate keyboard and mouse for common actions.
 
+**Build plan → [`PLAN.md`](./PLAN.md)**
+
 ---
 
 ## Demo
