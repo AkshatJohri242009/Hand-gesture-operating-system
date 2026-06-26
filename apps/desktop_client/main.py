@@ -13,6 +13,7 @@ from services.action_service.service import ActionService
 from services.context_service.service import ContextService
 from services.eye_service.service import EyeService
 from services.voice_service.service import VoiceService
+from services.workspace_service.service import WorkspaceEngine
 
 logger = logging.getLogger("apex.main")
 
@@ -27,6 +28,7 @@ class ApexControl:
         self.context: Optional[ContextService] = None
         self.eye: Optional[EyeService] = None
         self.voice: Optional[VoiceService] = None
+        self.workspace: Optional[WorkspaceEngine] = None
         self.show_debug = True
 
     def initialize(self):
@@ -45,6 +47,7 @@ class ApexControl:
         self.eye = EyeService()
         self.voice = VoiceService()
         self.voice.start()
+        self.workspace = WorkspaceEngine()
 
         bus.publish("system.initialized", {}, source="apex.main")
         logger.info("Apex Control initialized")
@@ -115,6 +118,8 @@ class ApexControl:
             self.eye.shutdown()
         if self.voice:
             self.voice.stop()
+        if self.workspace:
+            self.workspace.shutdown()
         if self.camera:
             self.camera.stop()
         cv2.destroyAllWindows()

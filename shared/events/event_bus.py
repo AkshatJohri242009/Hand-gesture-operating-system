@@ -133,6 +133,9 @@ topics = {
     # Workspace
     "workspace.launch": "Launch a workspace mode",
     "workspace.active": "Workspace mode active",
+    "ai.intent": "AI agent intent received",
+    "ai.task.planned": "AI agent has a plan",
+    "ai.task.executed": "AI agent executed a task",
 
     # AI
     "ai.intent": "AI agent intent received",

@@ -29,6 +29,8 @@ Thumbs.db
 
 # Project specific
 models/*.task
+models/whisper/
+models/*.bin
 storage/logs/
 *.log
 
