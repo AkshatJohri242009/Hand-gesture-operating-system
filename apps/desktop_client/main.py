@@ -16,6 +16,7 @@ from services.voice_service.service import VoiceService
 from services.workspace_service.service import WorkspaceEngine
 from services.ai_service.service import AIService
 from services.hud_service.bridge import HUDWebSocketBridge
+from services.hud_service.help_menu import draw_help
 
 logger = logging.getLogger("apex.main")
 
@@ -35,6 +36,7 @@ class ApexControl:
         self.ai: Optional[AIService] = None
         self.hud_bridge: Optional[HUDWebSocketBridge] = None
         self.show_debug = True
+        self.show_help = False
 
         # Performance tracking
         self._fps_counter = 0
@@ -123,28 +125,36 @@ class ApexControl:
                     app = self.context.current_app()
                     h, w = frame.shape[:2]
 
-                    # Status line
-                    latency_str = " | ".join(f"{k}={v*1000:.0f}ms" for k, v in self._latency.items())
-                    cv2.putText(frame, f"FPS: {self._fps:.0f}  {latency_str}", (10, 22),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 1)
-                    cv2.putText(frame, f"App: {app}", (10, h - 10),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1)
-                    cv2.putText(frame, "CURSOR ON" if cursor else "cursor off",
-                                (w - 140, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.6,
-                                (0, 255, 0) if cursor else (100, 100, 100), 2)
-                    cv2.putText(frame, f"Hands: {len(hands)}", (w - 140, 30),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
-                    for i, h in enumerate(hands):
-                        y = 30 + i * 25
-                        label = f"{h.handedness}: {len(h.landmarks)} lm"
-                        cv2.putText(frame, label, (10, 45 + i * 20),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
+                    if self.show_help:
+                        frame = draw_help(frame)
+                    else:
+                        latency_str = " | ".join(f"{k}={v*1000:.0f}ms" for k, v in self._latency.items())
+                        cv2.putText(frame, f"FPS: {self._fps:.0f}  {latency_str}", (10, 22),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 1)
+                        cv2.putText(frame, f"App: {app}  Act: {self.context.current_activity().value if hasattr(self.context, 'current_activity') else ''}",
+                                    (10, h - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1)
+                        cv2.putText(frame, "CURSOR ON" if cursor else "cursor off",
+                                    (w - 140, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.6,
+                                    (0, 255, 0) if cursor else (100, 100, 100), 2)
+                        cv2.putText(frame, f"Hands: {len(hands)}", (w - 140, 30),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+                        for i, h in enumerate(hands):
+                            label = f"{h.handedness}: {len(h.landmarks)} lm"
+                            cv2.putText(frame, label, (10, 45 + i * 20),
+                                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
+                        cv2.putText(frame, "H=help", (w - 70, h - 10),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (100, 100, 100), 1)
+
                     cv2.imshow("Apex Control", frame)
                     key = cv2.waitKey(1) & 0xFF
                     if key == 27:
                         break
                     elif key == ord("c"):
                         self.switch_camera()
+                    elif key == ord("h"):
+                        self.show_help = not self.show_help
+                    elif key == ord("d"):
+                        self.show_debug = not self.show_debug
 
         except KeyboardInterrupt:
             pass
