@@ -21,8 +21,9 @@ logger = logging.getLogger("apex.main")
 
 
 class ApexControl:
-    def __init__(self):
+    def __init__(self, camera_id: int = 0):
         self.running = False
+        self.camera_id = camera_id
         self.camera: Optional[CameraService] = None
         self.hand_tracker: Optional[HandTracker] = None
         self.gesture: Optional[GestureService] = None
@@ -35,12 +36,18 @@ class ApexControl:
         self.hud_bridge: Optional[HUDWebSocketBridge] = None
         self.show_debug = True
 
+        # Performance tracking
+        self._fps_counter = 0
+        self._fps_last = 0.0
+        self._fps = 0.0
+        self._latency = {}
+
     def initialize(self):
         logger.info("Initializing Apex Control...")
         config = self._load_config()
 
         self.hand_tracker = HandTracker(model_path="models/hand_landmarker.task")
-        self.camera = CameraService(device_id=0, width=640, height=480)
+        self.camera = CameraService(device_id=self.camera_id, width=640, height=480)
         if not self.camera.start():
             logger.error("Camera failed")
             return False
@@ -64,16 +71,20 @@ class ApexControl:
         if not self.initialize():
             return
         self.running = True
+        self._fps_last = time.time()
         logger.info("Apex Control started — press ESC to exit")
 
         try:
             while self.running:
+                t_frame = time.time()
                 ret, frame = self.camera._cap.read()
                 if not ret or frame is None:
                     continue
                 frame = cv2.flip(frame, 1)
 
+                t_hand = time.time()
                 hands = self.hand_tracker.process(frame)
+                self._latency["hand"] = time.time() - t_hand
 
                 hands_dicts = []
                 for h in hands:
@@ -85,7 +96,9 @@ class ApexControl:
                     })
                 bus.publish("vision.hand.landmarks", {"hands": hands_dicts, "frame_number": 0, "timestamp": time.time()}, source="vision-service")
 
+                t_eye = time.time()
                 face_data = self.eye.process(frame)
+                self._latency["eye"] = time.time() - t_eye
 
                 time.sleep(0.001)
                 self.context.poll()
@@ -95,25 +108,64 @@ class ApexControl:
                 if hands and cursor:
                     self.actions.update_cursor(hands[0].palm_center[0], hands[0].palm_center[1], True)
 
+                # FPS counter
+                self._fps_counter += 1
+                now = time.time()
+                if now - self._fps_last >= 1.0:
+                    self._fps = self._fps_counter / (now - self._fps_last)
+                    self._fps_counter = 0
+                    self._fps_last = now
+                self._latency["frame"] = time.time() - t_frame
+
                 if self.show_debug:
                     self.hand_tracker.draw(frame, hands)
                     self.eye.draw(frame, face_data)
                     app = self.context.current_app()
-                    cv2.putText(frame, f"App: {app}", (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1)
-                    cv2.putText(frame, "CURSOR ON" if cursor else "cursor off", (frame.shape[1] - 130, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0) if cursor else (100, 100, 100), 2)
-                    cv2.putText(frame, f"Hands: {len(hands)}", (frame.shape[1] - 130, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+                    h, w = frame.shape[:2]
+
+                    # Status line
+                    latency_str = " | ".join(f"{k}={v*1000:.0f}ms" for k, v in self._latency.items())
+                    cv2.putText(frame, f"FPS: {self._fps:.0f}  {latency_str}", (10, 22),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 1)
+                    cv2.putText(frame, f"App: {app}", (10, h - 10),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1)
+                    cv2.putText(frame, "CURSOR ON" if cursor else "cursor off",
+                                (w - 140, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.6,
+                                (0, 255, 0) if cursor else (100, 100, 100), 2)
+                    cv2.putText(frame, f"Hands: {len(hands)}", (w - 140, 30),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
                     for i, h in enumerate(hands):
-                        y = 60 + i * 25
+                        y = 30 + i * 25
                         label = f"{h.handedness}: {len(h.landmarks)} lm"
-                        cv2.putText(frame, label, (10, y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
+                        cv2.putText(frame, label, (10, 45 + i * 20),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
                     cv2.imshow("Apex Control", frame)
-                    if cv2.waitKey(1) & 0xFF == 27:
+                    key = cv2.waitKey(1) & 0xFF
+                    if key == 27:
                         break
+                    elif key == ord("c"):
+                        self.switch_camera()
 
         except KeyboardInterrupt:
             pass
         finally:
             self.stop()
+
+    def switch_camera(self):
+        """Hot-switch to next available camera."""
+        self.camera.stop()
+        import time as _t
+        _t.sleep(0.3)
+        for dev in range(5):
+            test = cv2.VideoCapture(dev)
+            if test and test.isOpened():
+                test.release()
+                self.camera = CameraService(device_id=dev, width=640, height=480)
+                if self.camera.start():
+                    self.camera_id = dev
+                    logger.info("Switched to camera %d", dev)
+                    return
+        logger.warning("No alternate camera found")
 
     def stop(self):
         self.running = False
@@ -148,6 +200,12 @@ class ApexControl:
 
 
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="Apex Control")
+    parser.add_argument("--camera", type=int, default=0, help="Camera device ID")
+    parser.add_argument("--no-debug", action="store_true", help="Disable debug overlay")
+    args = parser.parse_args()
     setup_logging("apex")
-    app = ApexControl()
+    app = ApexControl(camera_id=args.camera)
+    app.show_debug = not args.no_debug
     app.start()

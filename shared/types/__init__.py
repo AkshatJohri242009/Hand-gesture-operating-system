@@ -86,5 +86,6 @@ class ActivityLabel(Enum):
     GAMING = "gaming"
     ENTERTAINMENT = "entertainment"
     MEETING = "meeting"
+    SOCIAL = "social"
     IDLE = "idle"
     UNKNOWN = "unknown"
