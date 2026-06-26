@@ -68,6 +68,9 @@ class EventBus:
                 except Exception as e:
                     logger.error("Handler error for %s: %s", event.topic, e)
 
+    def subscribe_all(self, handler: EventHandler, subscriber_id: str = "") -> str:
+        return self.subscribe("*", handler, subscriber_id)
+
     def subscribe(self, topic_pattern: str, handler: EventHandler, subscriber_id: str = "", once: bool = False) -> str:
         sid = subscriber_id or str(uuid.uuid4())
         with self._lock:

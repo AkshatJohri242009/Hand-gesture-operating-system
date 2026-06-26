@@ -15,6 +15,7 @@ from services.eye_service.service import EyeService
 from services.voice_service.service import VoiceService
 from services.workspace_service.service import WorkspaceEngine
 from services.ai_service.service import AIService
+from services.hud_service.bridge import HUDWebSocketBridge
 
 logger = logging.getLogger("apex.main")
 
@@ -31,6 +32,7 @@ class ApexControl:
         self.voice: Optional[VoiceService] = None
         self.workspace: Optional[WorkspaceEngine] = None
         self.ai: Optional[AIService] = None
+        self.hud_bridge: Optional[HUDWebSocketBridge] = None
         self.show_debug = True
 
     def initialize(self):
@@ -51,6 +53,8 @@ class ApexControl:
         self.voice.start()
         self.workspace = WorkspaceEngine()
         self.ai = AIService()
+        self.hud_bridge = HUDWebSocketBridge()
+        self.hud_bridge.start()
 
         bus.publish("system.initialized", {}, source="apex.main")
         logger.info("Apex Control initialized")
@@ -125,6 +129,8 @@ class ApexControl:
             self.workspace.shutdown()
         if self.ai:
             self.ai.shutdown()
+        if self.hud_bridge:
+            self.hud_bridge.stop()
         if self.camera:
             self.camera.stop()
         cv2.destroyAllWindows()
