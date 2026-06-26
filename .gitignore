@@ -28,12 +28,10 @@ env/
 Thumbs.db
 
 # Project specific
-data/
 models/*.task
-logs/
+storage/logs/
 *.log
 
 # Interface (V4)
-interface/node_modules/
-interface/dist/
-interface/.next/
+apps/hud_ui/node_modules/
+apps/hud_ui/dist/
