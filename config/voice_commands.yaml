@@ -50,10 +50,10 @@ commands:
     params:
       amount: 10
 
-  - trigger: "volume (\d+)%"
+  - trigger: 'volume (\d+)%'
     action: volume_set
     params:
-      level: "$1"  # regex capture group
+      level: "$1"
 
   # System Control
   - trigger: "mute"

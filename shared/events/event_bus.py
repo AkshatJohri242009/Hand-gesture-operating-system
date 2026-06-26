@@ -108,6 +108,8 @@ topics = {
     "vision.hand.landmarks": "Hand landmarks detected",
     "vision.face.landmarks": "Face mesh + iris detected",
     "vision.eye.gaze": "Gaze estimated from iris position",
+    "vision.eye.blink": "Blink detected (single/double/long)",
+    "vision.head.pose": "Head pose direction detected",
 
     # Gesture
     "gesture.static.detected": "Static gesture recognized per frame",

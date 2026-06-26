@@ -1,7 +1,7 @@
 import cv2
 import logging
 import time
-import threading
+from typing import Optional
 
 from shared.events import bus, Event
 from shared.utils import setup_logging
@@ -11,6 +11,8 @@ from services.vision_service.service import CameraService
 from services.gesture_service.service import GestureService
 from services.action_service.service import ActionService
 from services.context_service.service import ContextService
+from services.eye_service.service import EyeService
+from services.voice_service.service import VoiceService
 
 logger = logging.getLogger("apex.main")
 
@@ -18,11 +20,13 @@ logger = logging.getLogger("apex.main")
 class ApexControl:
     def __init__(self):
         self.running = False
-        self.hand_tracker: HandTracker = None
-        self.camera: CameraService = None
-        self.gesture: GestureService = None
-        self.actions: ActionService = None
-        self.context: ContextService = None
+        self.camera: Optional[CameraService] = None
+        self.hand_tracker: Optional[HandTracker] = None
+        self.gesture: Optional[GestureService] = None
+        self.actions: Optional[ActionService] = None
+        self.context: Optional[ContextService] = None
+        self.eye: Optional[EyeService] = None
+        self.voice: Optional[VoiceService] = None
         self.show_debug = True
 
     def initialize(self):
@@ -38,6 +42,9 @@ class ApexControl:
         self.gesture = GestureService()
         self.actions = ActionService(gesture_config=config or {})
         self.context = ContextService()
+        self.eye = EyeService()
+        self.voice = VoiceService()
+        self.voice.start()
 
         bus.publish("system.initialized", {}, source="apex.main")
         logger.info("Apex Control initialized")
@@ -68,6 +75,8 @@ class ApexControl:
                     })
                 bus.publish("vision.hand.landmarks", {"hands": hands_dicts, "frame_number": 0, "timestamp": time.time()}, source="vision-service")
 
+                face_data = self.eye.process(frame)
+
                 time.sleep(0.001)
                 self.context.poll()
 
@@ -78,6 +87,7 @@ class ApexControl:
 
                 if self.show_debug:
                     self.hand_tracker.draw(frame, hands)
+                    self.eye.draw(frame, face_data)
                     app = self.context.current_app()
                     cv2.putText(frame, f"App: {app}", (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1)
                     cv2.putText(frame, "CURSOR ON" if cursor else "cursor off", (frame.shape[1] - 130, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0) if cursor else (100, 100, 100), 2)
@@ -101,6 +111,10 @@ class ApexControl:
         bus.shutdown()
         if self.hand_tracker:
             self.hand_tracker.close()
+        if self.eye:
+            self.eye.shutdown()
+        if self.voice:
+            self.voice.stop()
         if self.camera:
             self.camera.stop()
         cv2.destroyAllWindows()

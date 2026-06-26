@@ -4,136 +4,127 @@
 
 > Eliminate keyboard and mouse for common actions.
 
-**Build plan → [`PLAN.md`](./PLAN.md)**
-
----
-
-## Demo
-
-A 30-second video of controlling your desktop with hand movements is more compelling than most software projects. Record one early.
-
----
-
-## Roadmap
-
-### V1 — Gesture Controller (Current)
-
-| Gesture              | Action       |
-| -------------------- | ------------ |
-| Open Palm            | Cursor Mode  |
-| Pinch                | Left Click   |
-| Two Finger Pinch     | Right Click  |
-| Swipe Left / Right   | Tab Switch   |
-| Rotate Wrist         | Volume       |
-| Closed Fist          | Drag         |
-| Double Pinch         | Play/Pause   |
-
-**Stack:** Python, OpenCV, MediaPipe, PyAutoGUI
-
-### V1.5 — Voice Layer
-
-**Tools:** SpeechRecognition, Vosk (offline), OpenAI Whisper
-
-Voice commands for app launching, media control, system actions, and volume.
-
-### V2 — Eye Tracking
-
-Iris position drives cursor. Blinks become clicks. Single blink → click, double → double click, long → right click.
-
-### V2.5 — Head Tracking
-
-Head orientation maps to desktop navigation. Look up → Task View, Look left → Previous Desktop, etc.
-
-### V3 — Smart Context Layer
-
-Say "I want to study" — system opens browser, notes, Spotify study playlist, and enables focus mode automatically.
-
-### V4 — Tony Stark Interface
-
-Floating HUD panels, radial menus, motion graphics, gesture-controlled UI built with Electron, Three.js, React, and Framer Motion.
+**Branch:** `main` · **Architecture:** event-driven monorepo
 
 ---
 
 ## Architecture
 
 ```
-Webcam ──┐
-         ├── MediaPipe ──→ Gesture Recognition ──→ Command Mapper ──→ OS Actions
-Microphone ──┐
-             ├── STT Engine ──→ Intent Detection ──┘
-Camera ──┐
-         ├── Face Mesh ──→ Eye/Head Tracking ──────┘
-                              │
-                         Context Manager
-                              │
-                    ┌─────────┴─────────┐
-                    │                   │
-              App Awareness       AI Agent (V3)
-                    │                   │
-              Contextual Macros    Learning Layer
+Camera ──→ Vision Service ──→ Event Bus ──→ Gesture Service ──→ Event Bus ──→ Action Service ──→ OS
+Microphone ──→ Voice Service ──┘                │                               │
+                                       Context Service ←── (polls active window)  │
+                                              │                                  │
+                                       Workspace Service                    Mouse/Keyboard/Volume
+                                              │
+                                       AI Service (planned)
 ```
+
+All services communicate through an **Event Bus** (pub/sub). No direct module coupling.
 
 ---
 
 ## Project Structure
 
 ```
-├── src/
-│   ├── vision/             # Computer Vision (hand tracking, face mesh, eye tracking)
-│   ├── voice/              # Speech-to-text, intent detection
-│   ├── controllers/        # Mouse, keyboard, volume, Spotify actions
-│   ├── core/               # Command mapper, context manager, macro engine
-│   └── main.py             # Application entry point
-├── config/                 # YAML configuration files for gestures, voice, settings
-├── docs/                   # Architecture & gesture vocabulary docs
-├── tests/                  # Unit tests for each module
-├── scripts/                # Setup and utility scripts
-├── interface/              # V4 — React/Three.js HUD interface
-└── requirements.txt        # Python dependencies
+├── shared/                    # Shared library (imported by all services)
+│   ├── events/               # Event Bus, schemas, topic registry
+│   ├── types/                # Landmark, HandData, HandFeatures, FingerData
+│   └── utils/                # Structured logging
+├── services/                 # Independent services
+│   ├── vision_service/       # Camera capture, MediaPipe hand tracking
+│   ├── gesture_service/      # Feature extraction, formal gesture definitions, state machine
+│   ├── action_service/       # Mouse, keyboard, volume control
+│   ├── context_service/      # Active window detection, activity inference
+│   ├── eye_service/          # (planned) Iris tracking, blink detection
+│   ├── voice_service/        # (planned) STT via Whisper/Vosk
+│   ├── workspace_service/    # (planned) Study/Coding/Meeting mode launcher
+│   └── ai_service/           # (planned) LangGraph agent layer
+├── apps/                     # Application entry points
+│   ├── desktop_client/       # Main desktop app (this is what you run)
+│   ├── hud_ui/               # (planned) React/Three.js HUD overlay
+│   └── control_center/       # (planned) Settings and configuration UI
+├── config/                   # YAML configuration files
+├── docs/                     # Documentation
+├── storage/                  # Runtime data (logs, settings, memory)
+└── models/                   # Downloaded ML models (.task files)
 ```
 
 ---
 
-## Getting Started
+## Gesture Library (20+ gestures)
+
+| Category  | Gestures |
+|-----------|----------|
+| **Static** | Open Palm, Closed Fist, Pinch, Two Finger Pinch, Point, Peace, Three Fingers, OK Sign, Rock Sign, Thumbs Up |
+| **Dynamic** | Swipe Left/Right/Up/Down, Rotate CW/CCW, Wave, Double Pinch |
+
+Formal definitions in `services/gesture_service/gesture_definitions.py` with mathematical conditions for each gesture (finger states, angles, distances, velocity thresholds).
+
+---
+
+## Gesture Recognition Pipeline
+
+```
+Camera Frame
+    ↓
+MediaPipe Hand Landmarker → 21 landmarks per hand
+    ↓
+Feature Extractor → finger states, curl ratios, angles, distances, palm orientation, velocity
+    ↓
+Gesture Classifier → matches features against formal gesture definitions
+    ↓
+Gesture State Machine → per-gesture FSM: IDLE → CANDIDATE → ACTIVE → COOLDOWN
+    ↓
+Event Bus → gesture.event (PRESS/HOLD/RELEASE/TAP)
+    ↓
+Action Service → executes OS actions
+```
+
+---
+
+## Quick Start
 
 ```bash
-# Clone the repository
-git clone https://github.com/AkshatJohri24209/Hand-gesture-operating-system.git
-cd Hand-gesture-operating-system
-
-# Create virtual environment
-python -m venv .venv
-source .venv/bin/activate   # Linux/Mac
-.venv\Scripts\activate      # Windows
-
 # Install dependencies
 pip install -r requirements.txt
 
+# Download hand model (automatically placed in models/)
+python -c "import urllib.request; urllib.request.urlretrieve('https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task', 'models/hand_landmarker.task')"
+
 # Run
-python src/main.py
+python -m apps.desktop_client.main
 ```
+
+Press **ESC** to exit. Debug overlay shows landmarks + detected gestures + cursor mode.
 
 ---
 
-## Design Philosophy
+## Roadmap
 
-- **Minimal gesture vocabulary** — ~10 gestures, not 50
-- **Context-aware mappings** — gestures change meaning based on active application
-- **Fail gracefully** — if confidence is low, don't execute
-- **Privacy-first** — offline voice models by default (Vosk)
-- **Extensible** — each module is independent; add or remove layers freely
+| Stage | What |
+|-------|------|
+| ✅ V1 | Hand gesture controller (complete, running) |
+| 🚧 V1.5 | Voice layer (STT + intent parsing) |
+| ⏳ V2 | Eye tracking (iris position, blink detection) |
+| ⏳ V2.5 | Head tracking (look ↔ desktop navigation) |
+| ⏳ V3 | Smart context layer (AI intent understanding) |
+| ⏳ V4 | HUD interface (React/Electron/Three.js) |
 
 ---
 
 ## Tech Stack
 
-| Layer              | Technology                          |
-| ------------------ | ----------------------------------- |
-| Computer Vision    | OpenCV, MediaPipe                   |
-| Voice              | Whisper, Vosk, SpeechRecognition    |
-| Desktop Control    | PyAutoGUI, Pynput, Pycaw            |
-| AI/Agent           | LangGraph, LangChain, Local LLM     |
-| HUD Interface (V4) | React, Electron, Three.js, Framer Motion |
+| Layer | Technology |
+|-------|------------|
+| Vision | OpenCV, MediaPipe 0.10 (task API) |
+| Gesture | Formal definition system, rule-based classifier |
+| Actions | PyAutoGUI, keyboard, pycaw |
+| Context | pygetwindow |
+| Voice (planned) | Whisper, Vosk |
+| AI (planned) | LangGraph, Ollama |
+| HUD (planned) | React, Electron, Three.js |
+| Event Bus | In-process pub/sub (swappable for Redis/NATS) |
 
 ---
 
