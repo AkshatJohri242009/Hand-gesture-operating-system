@@ -2,6 +2,17 @@
 # Maps spoken commands to system actions
 
 commands:
+  # AI Agent Queries (must come first - catch-all patterns)
+  - trigger: "hey apex (.+)"
+    action: ai_query
+    params:
+      text: "$1"
+
+  - trigger: "apex (.+)"
+    action: ai_query
+    params:
+      text: "$1"
+
   # Application Launchers
   - trigger: "open spotify"
     action: launch_app
