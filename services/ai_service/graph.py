@@ -26,21 +26,20 @@ def _match_plan(intent: str, params: dict) -> list[dict]:
         "type ": ("type_text", lambda p: {"text": p.get("text", intent[5:])}),
     }
 
-    word_map = {
-        "screenshot": [{"tool": "screenshot", "args": {}}],
-        "screenshot": [{"tool": "screenshot", "args": {}}],
-        "lock": [{"tool": "lock_system", "args": {}}],
-        "volume up": [{"tool": "volume_up", "args": {}}],
-        "volume down": [{"tool": "volume_down", "args": {}}],
-        "mute": [{"tool": "volume_mute", "args": {}}],
-        "increase volume": [{"tool": "volume_up", "args": {}}],
-        "decrease volume": [{"tool": "volume_down", "args": {}}],
-        "click": [{"tool": "left_click", "args": {}}],
-        "double click": [{"tool": "double_click", "args": {}}],
-        "right click": [{"tool": "right_click", "args": {}}],
-    }
+    word_map = [
+        ("lock", [{"tool": "lock_system", "args": {}}]),
+        ("double click", [{"tool": "double_click", "args": {}}]),
+        ("right click", [{"tool": "right_click", "args": {}}]),
+        ("click", [{"tool": "left_click", "args": {}}]),
+        ("screenshot", [{"tool": "screenshot", "args": {}}]),
+        ("volume up", [{"tool": "volume_up", "args": {}}]),
+        ("volume down", [{"tool": "volume_down", "args": {}}]),
+        ("increase volume", [{"tool": "volume_up", "args": {}}]),
+        ("decrease volume", [{"tool": "volume_down", "args": {}}]),
+        ("mute", [{"tool": "volume_mute", "args": {}}]),
+    ]
 
-    for phrase, steps in word_map.items():
+    for phrase, steps in word_map:
         if phrase in intent_lower:
             return steps
 

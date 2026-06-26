@@ -49,11 +49,21 @@ class GestureDef:
             return self._check_finger_state(cond, f)
         return False
 
+    @staticmethod
+    def _resolve_key(d: dict, key: str):
+        parts = key.split(".")
+        for p in parts:
+            if isinstance(d, dict):
+                d = d.get(p)
+            else:
+                return None
+        return d
+
     def _check_feature(self, cond: dict, f: dict) -> bool:
         key = cond.get("key", "")
         op = cond.get("op", "lt")
         value = cond.get("value", 0.0)
-        actual = f.get(key)
+        actual = self._resolve_key(f, key)
         if actual is None:
             return False
         if op == "lt":
@@ -80,8 +90,8 @@ class GestureDef:
         key = cond.get("key", "")
         op = cond.get("op", "delta_gt")
         value = cond.get("value", 0.0)
-        current = f.get(key, 0.0)
-        prev = pf.get(key, 0.0)
+        current = self._resolve_key(f, key) or 0.0
+        prev = self._resolve_key(pf, key) or 0.0
         delta = abs(current - prev)
         if op == "delta_gt":
             return delta > value
@@ -180,7 +190,7 @@ def build_gesture_library() -> dict[str, GestureDef]:
         category="static",
         description="Index finger extended, others folded",
         conditions=[
-            {"type": "finger_state", "finger": "index", "state": "EXTENDED", "weight": 2.0},
+            {"type": "finger_state", "finger": "index", "state": "EXTENDED", "weight": 3.0},
             {"type": "finger_state", "finger": "middle", "state": "FOLDED", "weight": 1.0},
             {"type": "finger_state", "finger": "ring", "state": "FOLDED", "weight": 1.0},
             {"type": "finger_state", "finger": "pinky", "state": "FOLDED", "weight": 1.0},
@@ -223,7 +233,7 @@ def build_gesture_library() -> dict[str, GestureDef]:
         category="static",
         description="Thumb extended upward, all other fingers folded",
         conditions=[
-            {"type": "finger_state", "finger": "thumb", "state": "EXTENDED", "weight": 2.0},
+            {"type": "finger_state", "finger": "thumb", "state": "EXTENDED", "weight": 3.0},
             {"type": "finger_state", "finger": "index", "state": "FOLDED", "weight": 1.0},
             {"type": "finger_state", "finger": "middle", "state": "FOLDED", "weight": 1.0},
             {"type": "finger_state", "finger": "ring", "state": "FOLDED", "weight": 1.0},
@@ -320,7 +330,7 @@ def build_gesture_library() -> dict[str, GestureDef]:
         description="Wrist rotates clockwise (hand angle increases)",
         conditions=[
             {"type": "dynamic", "key": "hand_angle_rad", "op": "direction", "value": "positive", "weight": 2.0},
-            {"type": "feature", "key": "hand_angle_rad", "op": "delta_gt", "value": 0.5, "weight": 1.0},
+            {"type": "dynamic", "key": "hand_angle_rad", "op": "delta_gt", "value": 0.5, "weight": 1.0},
         ],
         min_confidence=0.7,
         hold_frames=1,
@@ -333,7 +343,7 @@ def build_gesture_library() -> dict[str, GestureDef]:
         description="Wrist rotates counterclockwise (hand angle decreases)",
         conditions=[
             {"type": "dynamic", "key": "hand_angle_rad", "op": "direction", "value": "negative", "weight": 2.0},
-            {"type": "feature", "key": "hand_angle_rad", "op": "delta_gt", "value": 0.5, "weight": 1.0},
+            {"type": "dynamic", "key": "hand_angle_rad", "op": "delta_gt", "value": 0.5, "weight": 1.0},
         ],
         min_confidence=0.7,
         hold_frames=1,

@@ -97,7 +97,8 @@ class EventBus:
         if pattern.endswith(".*"):
             return topic.startswith(pattern[:-1])
         if pattern.endswith(".**"):
-            return topic.startswith(pattern[:-2])
+            prefix = pattern[:-3]
+            return topic == prefix or topic.startswith(prefix + ".")
         return pattern == topic
 
     def shutdown(self):
